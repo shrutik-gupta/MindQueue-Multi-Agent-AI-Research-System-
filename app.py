@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from agents import build_reader_agent, build_search_agent, writer_chain, critic_chain
+from pipeline import run_research_pipeline
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -294,8 +294,8 @@ details summary {
 def step_card(num: str, title: str, state: str, desc: str = ""):
     status_map = {
         "waiting": ("WAITING", "status-waiting"),
-        "running": ("● RUNNING", "status-running"),
-        "done":    ("✓ DONE",   "status-done"),
+        "running": ("RUNNING", "status-running"),
+        "done":    ("DONE",   "status-done"),
     }
     label, cls = status_map.get(state, ("", ""))
     card_cls = {"running": "active", "done": "done"}.get(state, "")
@@ -385,51 +385,18 @@ if run_btn:
         st.rerun()
 
 if st.session_state.running and not st.session_state.done:
-    results = {}
     topic_val = st.session_state.topic_input
 
-    # ── Step 1: Search ──
-    with st.spinner("Search Agent is working…"):
-        search_agent = build_search_agent()
-        sr = search_agent.invoke({
-            "messages": [("user", f"Find recent, reliable and detailed information about: {topic_val}")]
-        })
-        results["search"] = sr["messages"][-1].content
-        st.session_state.results = dict(results)
-    st.rerun() if False else None   # keep inline for now
+    with st.spinner("Running research pipeline…"):
+        pipeline_results = run_research_pipeline(topic_val)
 
-    # ── Step 2: Reader ──
-    with st.spinner("Reader Agent is scraping top resources…"):
-        reader_agent = build_reader_agent()
-        rr = reader_agent.invoke({
-            "messages": [("user",
-                f"Based on the following search results about '{topic_val}', "
-                f"pick the most relevant URL and scrape it for deeper content.\n\n"
-                f"Search Results:\n{results['search'][:800]}"
-            )]
-        })
-        results["reader"] = rr["messages"][-1].content
-        st.session_state.results = dict(results)
-
-    # ── Step 3: Writer ──
-    with st.spinner("Writer is drafting the report…"):
-        research_combined = (
-            f"SEARCH RESULTS:\n{results['search']}\n\n"
-            f"DETAILED SCRAPED CONTENT:\n{results['reader']}"
-        )
-        results["writer"] = writer_chain.invoke({
-            "topic": topic_val,
-            "research": research_combined
-        })
-        st.session_state.results = dict(results)
-
-    # ── Step 4: Critic ──
-    with st.spinner("Critic is reviewing the report…"):
-        results["critic"] = critic_chain.invoke({
-            "report": results["writer"]
-        })
-        st.session_state.results = dict(results)
-
+    results = {
+        "search": pipeline_results["search_results"],
+        "reader": pipeline_results["scraped_content"],
+        "writer": pipeline_results["report"],
+        "critic": pipeline_results["feedback"],
+    }
+    st.session_state.results = results
     st.session_state.running = False
     st.session_state.done = True
     st.rerun()
@@ -464,7 +431,7 @@ if r:
 
         # Download
         st.download_button(
-            label="⬇  Download Report (.md)",
+            label="Download Report (.md)",
             data=r["writer"],
             file_name=f"research_report_{int(time.time())}.md",
             mime="text/markdown",
