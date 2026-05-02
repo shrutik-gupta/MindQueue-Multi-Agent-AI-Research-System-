@@ -12,7 +12,8 @@ llm = ChatMistralAI(model = "mistral-small", temperature=0)
 def build_search_agent():
     return create_agent(
         model = llm,
-        tools = [web_search] ,       
+        tools = [web_search],
+        system_prompt="You MUST use the web_search tool to retrieve the latest titles, URLs, and snippets. Do not answer using only your internal knowledge."
     )
 
 def build_reader_agent():

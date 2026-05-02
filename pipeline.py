@@ -10,6 +10,22 @@
 
 from agents import build_reader_agent, build_search_agent, writer_chain, critic_chain
 
+
+def _extract_tool_output(messages):
+    tool_texts = []
+    for msg in messages:
+        if isinstance(msg, dict):
+            msg_type = msg.get("type")
+            content = msg.get("content")
+        else:
+            msg_type = getattr(msg, "type", None)
+            content = getattr(msg, "content", None)
+        if msg_type == "tool" or getattr(msg, "__class__", None).__name__ == "ToolMessage":
+            if content:
+                tool_texts.append(content)
+    return "\n\n".join(tool_texts).strip()
+
+
 def run_research_pipeline(topic : str) -> dict:
     state = {}
     
@@ -19,8 +35,9 @@ def run_research_pipeline(topic : str) -> dict:
             ("user", f"Find recent, reliable and detailed information about {topic}")
         ]
     })
-    state["search_results"] = search_result['messages'][-1].content
-    print(f'\n\n{state['search_results']}\n\n')
+    search_tool_output = _extract_tool_output(search_result["messages"])
+    state["search_results"] = search_tool_output or search_result["messages"][-1].content
+    print(f'\n\n{state["search_results"]}\n\n')
 
     reader_agent = build_reader_agent()
     reader_result = reader_agent.invoke({
@@ -30,7 +47,8 @@ def run_research_pipeline(topic : str) -> dict:
             f"Search Results:\n{state['search_results'][:800]}"
         )]
     })
-    state["scraped_content"] = reader_result['messages'][-1].content
+    reader_tool_output = _extract_tool_output(reader_result["messages"])
+    state["scraped_content"] = reader_tool_output or reader_result["messages"][-1].content
     print(f'\n\n{state["scraped_content"]}\n\n')
 
     research_combined = (

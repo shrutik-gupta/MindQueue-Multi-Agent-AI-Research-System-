@@ -10,9 +10,9 @@ load_dotenv()
 
 tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
-@tool
+@tool()
 def web_search(query : str) -> str:
-    """Search the web for recent and reliable information on a topic. Returns Titles , URLs and snippits"""
+    """Search the web for recent and reliable information on a topic. Returns titles, URLs, and snippets."""
     try:
         response = tavily.search(query=query, max_results=5)
         out = []
@@ -24,9 +24,9 @@ def web_search(query : str) -> str:
     except Exception as e:
         return f"Could not search web: {str(e)}"
     
-@tool
+@tool()
 def scrape_url(url : str) -> str:
-    """Scrape and return clean text content from a given URL for deeper insights"""
+    """Scrape and return clean text content from a given URL for deeper insights."""
     try:
         response = requests.get(url, timeout=8, headers={"User-Agent" : "Mozilla/5.0"})
         soup = BeautifulSoup(response.text, "html.parser")
