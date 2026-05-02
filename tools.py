@@ -36,3 +36,4 @@ def scrape_url(url : str) -> str:
     except Exception as e:
         return f"Could not scrape URL: {str(e)}"
     
+
