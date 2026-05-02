@@ -45,3 +45,8 @@ pydantic>=2.5.0
 
 # Optional (for advanced parsing / HTML cleanup)
 html5lib>=1.1
+
+# Streamlit UI
+streamlit>=1.35.0
+streamlit-chat>=0.1.1
+nest-asyncio>=1.6.0
