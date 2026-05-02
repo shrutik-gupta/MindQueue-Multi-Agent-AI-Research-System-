@@ -36,4 +36,3 @@ def scrape_url(url : str) -> str:
     except Exception as e:
         return f"Could not scrape URL: {str(e)}"
     
-print(scrape_url.invoke("https://www.hindustantimes.com/india-news/bengal-election-2026-live-updates-voting-percentage-magrahat-paschim-diamond-harbour-falta-tmc-mamata-bjp-eci-evm-booths-101777682455033.html"))
