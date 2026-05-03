@@ -27,7 +27,7 @@ def _extract_tool_output(messages):
     return "\n\n".join(tool_texts).strip()
 
 
-def run_research_pipeline(topic : str) -> dict:
+def run_research_pipeline(topic : str):
     state = {}
     # state = {
     #     "search_results": "...",
@@ -47,6 +47,7 @@ def run_research_pipeline(topic : str) -> dict:
     #Storing search_tool_output in the state dictionary for passing it further to reader_agent
     search_tool_output = _extract_tool_output(search_result["messages"])
     state["search_results"] = search_tool_output or search_result["messages"][-1].content
+    yield ("search", search_tool_output)
 
     #Invoking the reader agent to scrape most relavant URL content for report generation
     reader_agent = build_reader_agent()
@@ -61,6 +62,7 @@ def run_research_pipeline(topic : str) -> dict:
     #Storing reader_tool_output in the state dictionary for passing it further to writer chain
     reader_tool_output = _extract_tool_output(reader_result["messages"])
     state["scraped_content"] = reader_tool_output or reader_result["messages"][-1].content
+    yield ("reader", reader_tool_output)
 
     #Combining results from search and reader agents for including it in the writer chain prompt
     research_combined = (
@@ -69,17 +71,19 @@ def run_research_pipeline(topic : str) -> dict:
     )
 
     #Invoking the witer chain with required inputs for write_chain_prompt and storing output in state dictionary for passing it further to critic chainc
-    state["report"] = writer_chain.invoke({
+    report = writer_chain.invoke({
         "topic":topic,
         "research":research_combined
     })
+    state["report"] = report
+    yield ("writer", report)
 
     #Invoking the critic chain with gathered research and storing output in state dictionary
-    state["feedback"] = critic_chain.invoke({
+    feedback = critic_chain.invoke({
         "report":state['report']
     })
-
-    return state
+    state["feedback"] = feedback
+    yield ("critic", feedback)
 
 if __name__ == "__main__":
     topic = input("\nEnter a research topic: ")
