@@ -319,7 +319,7 @@ with col_input:
         key="topic_input",
         label_visibility="visible",
     )
-    run_btn = st.button("⚡  Run Research Pipeline", use_container_width=True)
+    run_btn = st.button("Run Research Pipeline", use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("""
@@ -378,10 +378,10 @@ if run_btn:
 # ── Live pipeline execution — one step per rerun ──────────────────────────────
 STEP_KEYS   = ["search", "reader", "writer", "critic"]
 STEP_LABELS = {
-    "search": ("🔍", "Search Agent",  "Gathering recent web information…"),
-    "reader": ("📄", "Reader Agent",  "Scraping & extracting deep content…"),
-    "writer": ("✍️", "Writer Chain",  "Drafting the full research report…"),
-    "critic": ("🧐", "Critic Chain",  "Reviewing & scoring the report…"),
+    "search": (">", "Search Agent",  "Gathering recent web information…"),
+    "reader": (">", "Reader Agent",  "Scraping & extracting deep content…"),
+    "writer": (">", "Writer Chain",  "Drafting the full research report…"),
+    "critic": (">", "Critic Chain",  "Reviewing & scoring the report…"),
 }
 
 if st.session_state.running and not st.session_state.done:
@@ -423,7 +423,7 @@ if r:
     st.markdown('<div class="section-heading">Results</div>', unsafe_allow_html=True)
 
     if "search" in r:
-        with st.expander("🔍 Search Results (raw)", expanded=False):
+        with st.expander("Search Results (raw)", expanded=False):
             st.markdown(
                 f'<div class="result-panel">'
                 f'<div class="result-panel-title">Search Agent Output</div>'
@@ -433,7 +433,7 @@ if r:
             )
 
     if "reader" in r:
-        with st.expander("📄 Scraped Content (raw)", expanded=False):
+        with st.expander("Scraped Content (raw)", expanded=False):
             st.markdown(
                 f'<div class="result-panel">'
                 f'<div class="result-panel-title">Reader Agent Output</div>'
@@ -445,7 +445,7 @@ if r:
     if "writer" in r:
         st.markdown("""
         <div class="report-panel">
-            <div class="panel-label orange">📝 Final Research Report</div>
+            <div class="panel-label orange">Final Research Report</div>
         """, unsafe_allow_html=True)
         st.markdown(r["writer"])
         st.markdown("</div>", unsafe_allow_html=True)
@@ -460,7 +460,7 @@ if r:
     if "critic" in r:
         st.markdown("""
         <div class="feedback-panel">
-            <div class="panel-label green">🧐 Critic Feedback</div>
+            <div class="panel-label green">Critic Feedback</div>
         """, unsafe_allow_html=True)
         st.markdown(r["critic"])
         st.markdown("</div>", unsafe_allow_html=True)
