@@ -12,6 +12,7 @@ from agents import build_reader_agent, build_search_agent, writer_chain, critic_
 
 
 def _extract_tool_output(messages):
+    """Extracts content returned specifically from tool executions"""
     tool_texts = []
     for msg in messages:
         if isinstance(msg, dict):
@@ -28,17 +29,26 @@ def _extract_tool_output(messages):
 
 def run_research_pipeline(topic : str) -> dict:
     state = {}
-    
+    # state = {
+    #     "search_results": "...",
+    #     "scraped_content": "...",
+    #     "report": "...",
+    #     "feedback": "..."
+    # }
+
+    #Invoking the search agent to find relevant information from internet
     search_agent = build_search_agent()
     search_result = search_agent.invoke({
         "messages": [
             ("user", f"Find recent, reliable and detailed information about {topic}")
         ]
     })
+
+    #Storing search_tool_output in the state dictionary for passing it further to reader_agent
     search_tool_output = _extract_tool_output(search_result["messages"])
     state["search_results"] = search_tool_output or search_result["messages"][-1].content
-    print(f'\n\n{state["search_results"]}\n\n')
 
+    #Invoking the reader agent to scrape most relavant URL content for report generation
     reader_agent = build_reader_agent()
     reader_result = reader_agent.invoke({
         "messages": [("user", 
@@ -47,24 +57,27 @@ def run_research_pipeline(topic : str) -> dict:
             f"Search Results:\n{state['search_results'][:800]}"
         )]
     })
+
+    #Storing reader_tool_output in the state dictionary for passing it further to writer chain
     reader_tool_output = _extract_tool_output(reader_result["messages"])
     state["scraped_content"] = reader_tool_output or reader_result["messages"][-1].content
-    print(f'\n\n{state["scraped_content"]}\n\n')
 
+    #Combining results from search and reader agents for including it in the writer chain prompt
     research_combined = (
         f"Search results :\n{state['search_results']}\n\n"
         f"Detailed scraped content:\n{state['scraped_content']}"
     )
+
+    #Invoking the witer chain with required inputs for write_chain_prompt and storing output in state dictionary for passing it further to critic chainc
     state["report"] = writer_chain.invoke({
         "topic":topic,
         "research":research_combined
     })
-    print(f'\n\n{state["report"]}\n\n')
 
+    #Invoking the critic chain with gathered research and storing output in state dictionary
     state["feedback"] = critic_chain.invoke({
         "report":state['report']
     })
-    print(f'\n\n{state["feedback"]}\n\n')
 
     return state
 
