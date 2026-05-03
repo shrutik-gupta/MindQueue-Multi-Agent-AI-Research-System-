@@ -10,6 +10,7 @@ load_dotenv()
 
 tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
+# Tool 1 : Searches web for relevant URLs and returns a list of top 5 relevant URLs with title ans short description
 @tool()
 def web_search(query : str) -> str:
     """Search the web for recent and reliable information on a topic. Returns titles, URLs, and snippets."""
@@ -23,7 +24,8 @@ def web_search(query : str) -> str:
         return "\n---\n".join(out)
     except Exception as e:
         return f"Could not search web: {str(e)}"
-    
+
+# Tool 2 : Scrapes indepth content from a give URL, descarding script tags, style tags, navbar and footer (as they do not provide useful content)
 @tool()
 def scrape_url(url : str) -> str:
     """Scrape and return clean text content from a given URL for deeper insights."""
